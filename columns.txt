@@ -1,0 +1,41 @@
+import pandas as pd
+
+def analyze_columns(dataframes):
+    """
+    데이터프레임 리스트에서 공통 컬럼과 각 데이터프레임에만 있는 고유 컬럼을 반환하는 함수.
+
+    Parameters:
+        dataframes (list of pd.DataFrame): DataFrame 리스트
+
+    Returns:
+        common_columns (set): 모든 DataFrame에 공통적으로 존재하는 컬럼 집합
+        unique_columns (dict): 각 DataFrame별 고유 컬럼을 저장한 딕셔너리
+    """
+    # 모든 컬럼 집합을 추출
+    column_sets = [set(df.columns) for df in dataframes]
+    
+    # 공통 컬럼 추출 (모든 DataFrame에 있는 컬럼)
+    common_columns = set.intersection(*column_sets)
+    
+    # 각 DataFrame에만 있는 고유 컬럼 계산
+    unique_columns = {
+        f"dataframe_{i}": columns - common_columns
+        for i, columns in enumerate(column_sets)
+    }
+    
+    return common_columns, unique_columns
+
+# 사용 예시
+# 예제 DataFrame
+df1 = pd.DataFrame({'A': [1, 2], 'B': [3, 4], 'C': [5, 6]})
+df2 = pd.DataFrame({'A': [7, 8], 'B': [9, 10], 'D': [11, 12]})
+df3 = pd.DataFrame({'A': [13, 14], 'B': [15, 16], 'E': [17, 18]})
+
+list_A = [df1, df2, df3]
+
+# 함수 실행
+common_cols, unique_cols = analyze_columns(list_A)
+
+# 결과 출력
+print("공통 컬럼:", common_cols)
+print("고유 컬럼:", unique_cols)
