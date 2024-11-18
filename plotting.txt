@@ -1,55 +1,53 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+import matplotlib.dates as mdates
 
-def plot_time_series_with_intervals(df, columns, time_interval='h'):
+def plot_with_intervals(df, columns, time_interval='h'):
     """
-    Plots specified columns of a time series dataframe with vertical lines for specified intervals.
-    
-    Parameters:
-        df (pd.DataFrame): Time series dataframe with a datetime index.
-        columns (list): List of column names to plot.
-        time_interval (str): Interval for vertical lines on the plot. Options are:
-            'h' - hourly
-            'd' - daily
-            'w' - weekly
-            'm' - monthly
-    
-    Returns:
-        None
+    Plot specified columns from a DataFrame with vertical lines at specified time intervals.
+
+    Args:
+    df (pd.DataFrame): Input DataFrame containing a 'DATE_TIME' column.
+    columns (list): List of column names to plot.
+    time_interval (str): Time interval for vertical lines ('h', 'd', 'w', 'm').
     """
-    if df.index.dtype != 'datetime64[ns]':
-        raise ValueError("DataFrame index must be of datetime type")
+    # Convert 'DATE_TIME' column to datetime
+    df['DATE_TIME'] = pd.to_datetime(df['DATE_TIME'])
     
-    # Create the plot
+    # Set up the plot
     plt.figure(figsize=(12, 6))
     
-    # Plot each column
-    for column in columns:
-        if column in df.columns:
-            plt.plot(df.index, df[column], label=column)
-        else:
-            raise ValueError(f"Column '{column}' not found in DataFrame")
-    
-    # Add vertical lines based on the time_interval
+    # Plot each specified column
+    for col in columns:
+        plt.plot(df['DATE_TIME'], df[col], label=col)
+
+    # Define the locator for vertical lines based on the interval
     if time_interval == 'h':
-        vlines = df.index[df.index.minute == 0]
+        locator = mdates.HourLocator(interval=1)
     elif time_interval == 'd':
-        vlines = df.index[df.index.hour == 0]
+        locator = mdates.DayLocator(interval=1)
     elif time_interval == 'w':
-        vlines = df.index[df.index.weekday == 0]
+        locator = mdates.WeekdayLocator()
     elif time_interval == 'm':
-        vlines = df.index[df.index.is_month_start]
+        locator = mdates.MonthLocator()
     else:
-        raise ValueError("Invalid time_interval. Choose from 'h', 'd', 'w', or 'm'")
+        raise ValueError("Invalid time interval. Choose from 'h', 'd', 'w', or 'm'.")
     
-    for vline in vlines:
-        plt.axvline(vline, color='gray', linestyle='--', alpha=0.5)
+    # Add vertical lines
+    for time in mdates.num2date(locator.tick_values(df['DATE_TIME'].min(), df['DATE_TIME'].max())):
+        plt.axvline(time, color='gray', linestyle='--', alpha=0.6)
     
-    # Add labels, legend, and grid
-    plt.xlabel("Time")
-    plt.ylabel("Value")
-    plt.title("Time Series Plot with Intervals")
+    # Format the x-axis
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M:%S'))
+    plt.gcf().autofmt_xdate()  # Rotate date labels for better readability
+    
+    # Add legend, grid, and labels
     plt.legend()
-    plt.grid(True)
+    plt.grid(alpha=0.3)
+    plt.xlabel("Time")
+    plt.ylabel("Values")
+    plt.title("Time Series Plot with Vertical Lines")
     plt.tight_layout()
+    
+    # Show the plot
     plt.show()
