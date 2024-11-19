@@ -5,13 +5,13 @@ import matplotlib.dates as mdates
 def plot_with_intervals(df, columns, time_interval='h', start_hour=7):
     """
     Plot specified columns from a DataFrame with vertical lines at specified time intervals.
-    Allows setting the start hour for 'd' intervals.
+    Allows setting the start hour for daily, weekly, and monthly intervals.
     
     Args:
     df (pd.DataFrame): Input DataFrame containing a 'DATE_TIME' column.
     columns (list): List of column names to plot.
     time_interval (str): Time interval for vertical lines ('h', 'd', 'w', 'm').
-    start_hour (int): Start hour for daily intervals (e.g., 7 for 7:00 AM).
+    start_hour (int): Start hour for daily, weekly, and monthly intervals (e.g., 7 for 7:00 AM).
     """
     # Convert 'DATE_TIME' column to datetime
     df['DATE_TIME'] = pd.to_datetime(df['DATE_TIME'])
@@ -26,6 +26,8 @@ def plot_with_intervals(df, columns, time_interval='h', start_hour=7):
     # Generate vertical lines based on time_interval
     if time_interval == 'h':
         locator = mdates.HourLocator(interval=1)
+        for time in mdates.num2date(locator.tick_values(df['DATE_TIME'].min(), df['DATE_TIME'].max())):
+            plt.axvline(time, color='gray', linestyle='--', alpha=0.6)
     elif time_interval == 'd':
         # Generate daily intervals starting from start_hour
         custom_dates = pd.date_range(
@@ -36,13 +38,18 @@ def plot_with_intervals(df, columns, time_interval='h', start_hour=7):
         for date in custom_dates:
             plt.axvline(date, color='gray', linestyle='--', alpha=0.6)
     elif time_interval == 'w':
-        locator = mdates.WeekdayLocator()
-        for time in mdates.num2date(locator.tick_values(df['DATE_TIME'].min(), df['DATE_TIME'].max())):
-            plt.axvline(time, color='gray', linestyle='--', alpha=0.6)
+        # Generate weekly intervals starting from the first Monday at start_hour
+        first_monday = df['DATE_TIME'].min() - pd.Timedelta(days=df['DATE_TIME'].min().weekday())
+        first_monday = first_monday.replace(hour=start_hour, minute=0, second=0)
+        custom_dates = pd.date_range(start=first_monday, end=df['DATE_TIME'].max(), freq='7D')
+        for date in custom_dates:
+            plt.axvline(date, color='gray', linestyle='--', alpha=0.6)
     elif time_interval == 'm':
-        locator = mdates.MonthLocator()
-        for time in mdates.num2date(locator.tick_values(df['DATE_TIME'].min(), df['DATE_TIME'].max())):
-            plt.axvline(time, color='gray', linestyle='--', alpha=0.6)
+        # Generate monthly intervals starting from the first day of each month at start_hour
+        first_of_month = df['DATE_TIME'].min().replace(day=1, hour=start_hour, minute=0, second=0)
+        custom_dates = pd.date_range(start=first_of_month, end=df['DATE_TIME'].max(), freq='MS')
+        for date in custom_dates:
+            plt.axvline(date, color='gray', linestyle='--', alpha=0.6)
     else:
         raise ValueError("Invalid time interval. Choose from 'h', 'd', 'w', or 'm'.")
     
