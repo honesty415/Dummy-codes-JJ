@@ -1,0 +1,29 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def plot_distributions_by_a(df, a_col, cols):
+    """
+    Plot the distribution of variables in `cols` based on the values of column `a_col`.
+
+    Args:
+    df (pd.DataFrame): DataFrame containing the data.
+    a_col (str): Name of the column with values (-1, 0, 1).
+    cols (list): List of column names whose distributions need to be plotted.
+    """
+    # Loop through each column in cols
+    for col in cols:
+        plt.figure(figsize=(8, 5))
+        
+        # Create a separate distribution plot for each value in a_col
+        for value in df[a_col].unique():
+            subset = df[df[a_col] == value]
+            sns.kdeplot(subset[col], label=f"{a_col} = {value}", fill=True, alpha=0.5)
+        
+        # Add labels and title
+        plt.title(f"Distribution of {col} by {a_col}")
+        plt.xlabel(col)
+        plt.ylabel("Density")
+        plt.legend()
+        plt.grid(alpha=0.3)
+        plt.show()
