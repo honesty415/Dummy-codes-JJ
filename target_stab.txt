@@ -1,0 +1,46 @@
+import pandas as pd
+
+def classify_target(df, target_col, t, a):
+    """
+    Classify the target variable based on conditions relative to a threshold `a` and a time window `t`.
+
+    Args:
+    df (pd.DataFrame): Input DataFrame containing the target variable.
+    target_col (str): Name of the target variable column.
+    t (int): Time window in minutes for checking values around the current time.
+    a (float): Threshold value to compare against.
+
+    Returns:
+    pd.DataFrame: DataFrame with a new column "classified_target" based on the specified conditions.
+    """
+    # Ensure the DataFrame is sorted by time
+    df = df.sort_values(by='DATE_TIME')
+    
+    # Convert DATE_TIME to datetime if it's not already
+    df['DATE_TIME'] = pd.to_datetime(df['DATE_TIME'])
+
+    # Initialize the classified target variable with zeros
+    df['classified_target'] = 0
+
+    # Iterate over each row and classify the target variable
+    for i, row in df.iterrows():
+        current_time = row['DATE_TIME']
+
+        # Define the time window
+        start_time = current_time - pd.Timedelta(minutes=t)
+        end_time = current_time + pd.Timedelta(minutes=t)
+
+        # Get the subset of rows within the time window
+        window_df = df[(df['DATE_TIME'] >= start_time) & (df['DATE_TIME'] <= end_time)]
+
+        # Check if all values in the window are equal to `a`
+        if all(window_df[target_col] == a):
+            df.at[i, 'classified_target'] = 0
+        else:
+            current_value = row[target_col]
+            if current_value > a:
+                df.at[i, 'classified_target'] = 1
+            elif current_value < a:
+                df.at[i, 'classified_target'] = -1
+
+    return df
