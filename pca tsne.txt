@@ -1,0 +1,43 @@
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+import pandas as pd
+import numpy as np
+
+# 샘플 데이터 생성
+np.random.seed(42)
+data = np.random.rand(100, 10)  # 100개 샘플, 10차원 데이터
+labels = np.random.choice(['A', 'B', 'C'], size=100)  # 라벨 A, B, C 중 하나
+
+# PCA 적용
+pca = PCA(n_components=2)
+pca_result = pca.fit_transform(data)
+
+# 결과를 데이터프레임으로 변환
+df_pca = pd.DataFrame(pca_result, columns=['PCA1', 'PCA2'])
+df_pca['Label'] = labels
+
+# t-SNE 적용
+tsne = TSNE(n_components=2, random_state=42)
+tsne_result = tsne.fit_transform(data)
+
+# 결과를 데이터프레임으로 변환
+df_tsne = pd.DataFrame(tsne_result, columns=['TSNE1', 'TSNE2'])
+df_tsne['Label'] = labels
+
+# PCA 결과 시각화
+plt.figure(figsize=(8, 6))
+sns.scatterplot(data=df_pca, x='PCA1', y='PCA2', hue='Label', palette='tab10', s=100)
+plt.title("PCA Result")
+plt.legend(title='Label')
+plt.grid(alpha=0.3)
+plt.show()
+
+# t-SNE 결과 시각화
+plt.figure(figsize=(8, 6))
+sns.scatterplot(data=df_tsne, x='TSNE1', y='TSNE2', hue='Label', palette='tab10', s=100)
+plt.title("t-SNE Result")
+plt.legend(title='Label')
+plt.grid(alpha=0.3)
+plt.show()
