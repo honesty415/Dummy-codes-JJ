@@ -1,0 +1,33 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def plot_distributions(df_list, columns_list, df_names):
+    """
+    Plot distributions of specified columns from multiple DataFrames.
+
+    Args:
+    df_list (list of pd.DataFrame): List of DataFrames to analyze.
+    columns_list (list of str): List of column names to plot.
+    df_names (list of str): List of names corresponding to the DataFrames.
+
+    Returns:
+    None: Displays the plots.
+    """
+    for col in columns_list:
+        plt.figure(figsize=(10, 6))
+        
+        # Plot each DataFrame's distribution for the current column
+        for df, name in zip(df_list, df_names):
+            if col in df.columns:  # Check if the column exists in the DataFrame
+                sns.kdeplot(df[col], label=name, fill=True, alpha=0.5)
+            else:
+                print(f"Column '{col}' not found in DataFrame '{name}'. Skipping.")
+        
+        # Plot settings
+        plt.title(f"Distribution of '{col}'")
+        plt.xlabel(col)
+        plt.ylabel("Density")
+        plt.legend(title="DataFrame")
+        plt.grid(alpha=0.3)
+        plt.show()
