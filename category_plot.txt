@@ -1,7 +1,9 @@
+import matplotlib.pyplot as plt
+import pandas as pd
 
-def plot_target_by_category(df, target_col, cate_col):
+def plot_time_series_with_categories(df, target_col, cate_col):
     """
-    시계열 target 변수를 categorical 변수에 따라 색상을 달리하여 플롯.
+    시계열 데이터에서 모든 데이터를 선으로 연결하고, 데이터 포인트의 색상을 카테고리별로 다르게 표시.
 
     Parameters:
         df (pd.DataFrame): 입력 데이터프레임
@@ -14,33 +16,20 @@ def plot_target_by_category(df, target_col, cate_col):
     # 고유 카테고리와 색상 매핑
     unique_categories = df[cate_col].unique()
     colors = plt.cm.tab10(range(len(unique_categories)))  # 색상 팔레트
+    color_map = {category: colors[idx] for idx, category in enumerate(unique_categories)}
     
+    # 시간 순서에 따라 모든 데이터를 선으로 연결
     plt.figure(figsize=(12, 6))
-    
-    for idx, category in enumerate(unique_categories):
-        category_data = df[df[cate_col] == category]
-        plt.plot(
-            category_data.index,
-            category_data[target_col],
-            color=colors[idx],
-            label=f'Category {category}'
-        )
-    
-    plt.title(f"{target_col} by {cate_col}")
+    plt.plot(df.index, df[target_col], color='gray', alpha=0.5, label='Interpolated Line')
+
+    # 각 데이터 포인트를 카테고리별 색상으로 표시
+    for idx, row in df.iterrows():
+        plt.scatter(idx, row[target_col], color=color_map[row[cate_col]], label=f'Category {row[cate_col]}' if f'Category {row[cate_col]}' not in plt.gca().get_legend_handles_labels()[1] else None)
+
+    # 그래프 설정
+    plt.title(f"{target_col} with Categories")
     plt.xlabel("Time")
     plt.ylabel(target_col)
     plt.legend()
     plt.grid(True)
     plt.show()
-
-# 데이터 준비
-data = {
-    'time': pd.date_range('2024-01-01', periods=6),
-    'target': [1, 2, 3, 4, 5, 6],
-    'cate': [0, 0, 0, 1, 1, 2]
-}
-df = pd.DataFrame(data)
-df.set_index('time', inplace=True)  # 시간 열을 인덱스로 설정
-
-# 함수 호출
-plot_target_by_category(df, target_col='target', cate_col='cate')
