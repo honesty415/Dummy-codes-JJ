@@ -1,0 +1,29 @@
+import numpy as np
+from hmmlearn import hmm
+
+# 1. 데이터 준비 (관측 데이터)
+# 예제 데이터: 간단한 관측값 시퀀스
+observations = np.array([[1], [2], [3], [2], [1], [3], [2], [1]])
+
+# 2. HMM 모델 생성
+# n_components: 숨겨진 상태 개수
+model = hmm.GaussianHMM(n_components=3, covariance_type="diag", n_iter=100)
+
+# 3. 모델 초기화 및 학습
+model.fit(observations)
+
+# 4. 숨겨진 상태 예측
+hidden_states = model.predict(observations)
+
+print("관측값 시퀀스:", observations.ravel())
+print("예측된 숨겨진 상태:", hidden_states)
+
+# 5. 모델 매개변수 출력
+print("\n전이 확률 행렬:")
+print(model.transmat_)
+
+print("\n숨겨진 상태의 평균값:")
+print(model.means_)
+
+print("\n숨겨진 상태의 공분산:")
+print(model.covars_)
