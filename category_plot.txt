@@ -1,0 +1,47 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def plot_time_series_by_category(dataframe, target_col, category_col):
+    """
+    시계열 데이터를 카테고리별로 다른 색상으로 플롯하는 함수.
+
+    Parameters:
+        dataframe (pd.DataFrame): 입력 데이터프레임.
+        target_col (str): 타겟 변수의 열 이름.
+        category_col (str): 카테고리 변수의 열 이름.
+    """
+    # 카테고리별 색상 지정
+    unique_categories = dataframe[category_col].unique()
+    colors = plt.cm.tab10(range(len(unique_categories)))  # 색상 팔레트
+    
+    plt.figure(figsize=(10, 6))
+
+    # 카테고리별 데이터 플롯
+    for idx, category in enumerate(unique_categories):
+        category_data = dataframe[dataframe[category_col] == category]
+        plt.plot(
+            category_data.index,  # 시간축
+            category_data[target_col],  # 타겟 변수 값
+            label=f'{category_col}: {category}',
+            color=colors[idx],
+            marker='o'
+        )
+
+    # 그래프 꾸미기
+    plt.title(f"{target_col} by {category_col}")
+    plt.xlabel("Index (Time)")
+    plt.ylabel(target_col)
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+# 예제 실행
+# 데이터 준비
+data = {
+    'target': [1, 2, 3, 4, 5, 6],
+    'cate': [0, 0, 0, 1, 1, 2]
+}
+df = pd.DataFrame(data)
+
+# 함수 호출
+plot_time_series_by_category(df, 'target', 'cate')
