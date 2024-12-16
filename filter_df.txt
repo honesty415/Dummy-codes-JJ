@@ -1,24 +1,60 @@
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
-def filter_by_datetime(df: pd.DataFrame, datetime_col: str, threshold: str):
+from typing import List
+
+def filter_by_datetime(df: pd.DataFrame, datetime_col: str, start_T: str = None, end_T: str = None):
     """
-    Filter rows in a DataFrame where the datetime column is less than the given threshold.
+    Filter rows in a DataFrame where the datetime column is within the given range.
 
     Args:
         df (pd.DataFrame): Input DataFrame containing a datetime column.
         datetime_col (str): Name of the datetime column in the DataFrame.
-        threshold (str): The threshold datetime in 'YYYY-MM-DD HH:MM:SS' format.
+        start_T (str): The start time in 'YYYY-MM-DD HH:MM:SS' format. If None, includes data from the beginning.
+        end_T (str): The end time in 'YYYY-MM-DD HH:MM:SS' format. If None, includes data to the end.
 
     Returns:
-        pd.DataFrame: Filtered DataFrame with rows where datetime_col < threshold.
+        pd.DataFrame: Filtered DataFrame with rows where start_T <= datetime_col <= end_T.
     """
     # Convert the datetime column to pandas datetime format
     df[datetime_col] = pd.to_datetime(df[datetime_col])
-    
-    # Convert the threshold to a datetime object
-    threshold_datetime = pd.to_datetime(threshold)
-    
-    # Filter rows where datetime_col is less than the threshold
-    filtered_df = df[df[datetime_col] < threshold_datetime]
-    
+
+    # Determine start and end times
+    if start_T is not None:
+        start_T = pd.to_datetime(start_T)
+    else:
+        start_T = df[datetime_col].min()
+
+    if end_T is not None:
+        end_T = pd.to_datetime(end_T)
+    else:
+        end_T = df[datetime_col].max()
+
+    # Filter rows within the specified range
+    filtered_df = df[(df[datetime_col] >= start_T) & (df[datetime_col] <= end_T)]
+
     return filtered_df
+
+# Example DataFrame
+data = {
+    'Datetime': ['2024-12-01 00:00:00', '2024-12-02 00:00:00', '2024-12-03 00:00:00'],
+    'Value': [100, 200, 300]
+}
+df = pd.DataFrame(data)
+
+# Filter rows where 'Datetime' is between '2024-12-01 00:00:00' and '2024-12-02 23:59:59'
+filtered_df = filter_by_datetime(df, 'Datetime', start_T='2024-12-01 00:00:00', end_T='2024-12-02 23:59:59')
+print("Filtered DataFrame:")
+print(filtered_df)
+
+# Filter rows with only start_T
+filtered_df_start = filter_by_datetime(df, 'Datetime', start_T='2024-12-02 00:00:00')
+print("Filtered DataFrame (start_T only):")
+print(filtered_df_start)
+
+# Filter rows with only end_T
+filtered_df_end = filter_by_datetime(df, 'Datetime', end_T='2024-12-02 00:00:00')
+print("Filtered DataFrame (end_T only):")
+print(filtered_df_end)
