@@ -1,13 +1,13 @@
 def sum_nested_lists(list_of_lists):
-    # 결과를 저장할 리스트 초기화
+    # 같은 위치에 있는 리스트를 순회하면서 합산
     result = []
-    
-    # 리스트 A와 B의 각 요소를 합산
-    for lists in zip(*list_of_lists):
-        # 길이가 서로 다른 리스트를 요소별로 더하기
-        summed_lists = [sum(items) for items in zip(*[l + [0] * (max(map(len, lists)) - len(l)) for l in lists])]
-        result.append(summed_lists)
-    
+    for arrays in zip(*list_of_lists):
+        # 각 리스트를 numpy 배열로 변환, 길이가 다르면 `np.pad`로 길이 맞추기
+        max_len = max(len(arr) for arr in arrays)
+        padded_arrays = [np.pad(arr, (0, max_len - len(arr)), constant_values=0) for arr in arrays]
+        # numpy 배열로 합산
+        summed_array = np.sum(padded_arrays, axis=0)
+        result.append(summed_array.tolist())
     return result
 
 # 예제 데이터
