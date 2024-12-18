@@ -1,21 +1,44 @@
-def sum_nested_lists(list_of_lists):
-    # 같은 위치에 있는 리스트를 순회하면서 합산
+import numpy as np
+
+def sum_nested_lists(list_of_lists, weights=None):
+    """
+    길이가 다른 리스트들의 가중 합산을 수행.
+    
+    Args:
+        list_of_lists (list of list): A, B 등 여러 리스트들을 포함한 리스트
+        weights (list): 가중치 벡터. None이면 uniform weight로 설정.
+    
+    Returns:
+        list: 가중 합산된 리스트
+    """
+    num_lists = len(list_of_lists)
+    
+    # 가중치 설정: 기본값은 uniform weight
+    if weights is None:
+        weights = [1 / num_lists] * num_lists
+    
+    # 결과 저장 리스트
     result = []
+    
+    # 같은 위치에 있는 리스트들을 순회
     for arrays in zip(*list_of_lists):
-        # 각 리스트를 numpy 배열로 변환, 길이가 다르면 `np.pad`로 길이 맞추기
         max_len = max(len(arr) for arr in arrays)
+        # 리스트 길이를 맞추기 위해 0으로 패딩
         padded_arrays = [np.pad(arr, (0, max_len - len(arr)), constant_values=0) for arr in arrays]
-        # numpy 배열로 합산
-        summed_array = np.sum(padded_arrays, axis=0)
-        result.append(summed_array.tolist())
+        # 가중치 적용 후 합산
+        weighted_sum = np.sum([w * np.array(padded) for w, padded in zip(weights, padded_arrays)], axis=0)
+        result.append(weighted_sum.tolist())
+    
     return result
 
 # 예제 데이터
 A = [[1, 2], [1], [2, 3, 4]]
 B = [[1, 3], [2], [2, 3, 5]]
-
 C = [A, B]  # 여러 리스트를 담은 리스트
 
-# 합산 결과 계산
-result = sum_nested_lists(C)
-print(result)
+# 예제 1: 기본 uniform weight
+print("Uniform Weight:", sum_nested_lists(C))
+
+# 예제 2: 가중치 적용 (0.3A + 0.7B)
+weights = [0.3, 0.7]
+print("Weighted Sum (0.3A + 0.7B):", sum_nested_lists(C, weights=weights))
