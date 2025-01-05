@@ -1,0 +1,45 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import correlate
+
+# 1. 시계열 데이터 생성
+np.random.seed(42)  # 랜덤 시드 설정
+n = 100  # 데이터 길이
+
+# 타겟 시계열
+target_series = np.sin(np.linspace(0, 2 * np.pi, n)) + 0.1 * np.random.normal(size=n)
+
+# 비교할 시계열 (시간 지연 포함)
+lag = 5  # 실제 시간 지연 (lag)
+comparison_series = np.roll(target_series, lag) + 0.1 * np.random.normal(size=n)
+
+# 2. Cross-Correlation 계산
+cross_corr = correlate(comparison_series, target_series, mode='full')
+lags = np.arange(-n + 1, n)  # 가능한 시간 지연 값
+max_corr_index = np.argmax(cross_corr)  # 최대 상관 계수 인덱스
+max_corr_lag = lags[max_corr_index]  # 최대 상관 계수의 시간 지연
+max_corr_value = cross_corr[max_corr_index]  # 최대 상관 계수 값
+
+# 3. 결과 출력
+print(f"최대 상관 계수: {max_corr_value:.4f}")
+print(f"최대 상관 계수가 발생한 시간 지연 (Lag): {max_corr_lag}")
+
+# 4. Cross-Correlation 시각화
+plt.figure(figsize=(10, 5))
+plt.plot(lags, cross_corr, label='Cross-Correlation')
+plt.axvline(x=max_corr_lag, color='red', linestyle='--', label=f'Max Corr Lag: {max_corr_lag}')
+plt.title("Cross-Correlation Function")
+plt.xlabel("Lag")
+plt.ylabel("Cross-Correlation")
+plt.legend()
+plt.grid()
+plt.show()
+
+# 5. 시계열 데이터 비교 시각화
+plt.figure(figsize=(10, 5))
+plt.plot(target_series, label='Target Series')
+plt.plot(comparison_series, label=f'Comparison Series (Lag: {lag})', alpha=0.7)
+plt.title("Target and Comparison Series")
+plt.legend()
+plt.grid()
+plt.show()
