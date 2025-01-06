@@ -35,9 +35,18 @@ def fit_multivariate_hmm(dfs, cols, n_components, class_cols):
 
     all_data = np.vstack(all_data)  # Combine all data while keeping track of lengths
 
-    # Fit the Gaussian HMM
+    # Fit the Gaussian HMM with retry until convergence
     model = GaussianHMM(n_components=n_components, covariance_type="full", random_state=42)
-    model.fit(all_data, lengths)
+    max_attempts = 10
+    attempts = 0
+    while attempts < max_attempts:
+        try:
+            model.fit(all_data, lengths)
+            break
+        except ValueError:
+            attempts += 1
+            if attempts == max_attempts:
+                raise RuntimeError("HMM failed to converge after multiple attempts.")
 
     # Get the covariance matrices for each state
     covariances = model.covars_
