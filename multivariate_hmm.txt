@@ -1,0 +1,67 @@
+from hmmlearn.hmm import GaussianHMM
+import numpy as np
+import pandas as pd
+
+def fit_multivariate_hmm(dfs, cols, n_components, class_cols):
+    """
+    Fits a multivariate Gaussian HMM to the dataframes in dfs using the variables in cols.
+    Handles non-continuous datasets by treating each DataFrame as an independent sequence.
+    Determines the stable state based on the variance of class_cols and returns the complement
+    of the probability of being in the stable state for each time point, along with the stable state
+    and predicted states for each DataFrame.
+
+    Parameters:
+        dfs (list of pd.DataFrame): List of dataframes containing the data.
+        cols (list of str): List of column names to use for fitting the HMM.
+        n_components (int): Number of states in the HMM.
+        class_cols (list of str): Columns used to evaluate the stable state.
+
+    Returns:
+        tuple:
+            - list of list: A list of lists where each inner list contains the complement of the
+              probability of being in the stable state for each time point in the corresponding dataframe.
+            - int: The stable state.
+            - list of list: A list of lists where each inner list contains the predicted states
+              for each time point in the corresponding dataframe.
+    """
+    # Prepare the data for HMM fitting
+    all_data = []
+    lengths = []
+
+    for df in dfs:
+        data = df[cols].values
+        all_data.append(data)
+        lengths.append(len(data))
+
+    all_data = np.vstack(all_data)  # Combine all data while keeping track of lengths
+
+    # Fit the Gaussian HMM
+    model = GaussianHMM(n_components=n_components, covariance_type="full", random_state=42)
+    model.fit(all_data, lengths)
+
+    # Get the covariance matrices for each state
+    covariances = model.covars_
+
+    # Determine the stable state based on class_cols
+    class_indices = [cols.index(col) for col in class_cols]
+    variances = [
+        np.mean([cov[class_idx, class_idx] for class_idx in class_indices])
+        for cov in covariances
+    ]
+    stable_state = np.argmin(variances)
+
+    # Compute the probabilities and predict states for each sequence separately
+    complement_probs_results = []
+    predicted_states_results = []
+    start_idx = 0
+    for df, length in zip(dfs, lengths):
+        data = df[cols].values
+        state_probs = model.predict_proba(data)
+        stable_state_probs = state_probs[:, stable_state]
+        complement_probs = 1 - stable_state_probs
+        complement_probs_results.append(complement_probs.tolist())
+
+        predicted_states = model.predict(data)
+        predicted_states_results.append(predicted_states.tolist())
+
+    return complement_probs_results, stable_state, predicted_states_results
