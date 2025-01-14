@@ -1,15 +1,23 @@
-def normalize_dfs(dfs, method='standard'):
+def normalize_common_columns(dfs, method='standard'):
     """
-    Normalize float columns in dfs with a single scaler.
+    Normalize float columns that are common across all DataFrames in dfs using a single scaler.
     
     Parameters:
-    - dfs: list of DataFrames, each with float columns to normalize.
+    - dfs: list of DataFrames, each with potentially differing columns.
     - method: 'standard' for StandardScaler or 'minmax' for MinMaxScaler.
     
     Returns:
-    - normalized_dfs: list of DataFrames, each normalized using the same scaler.
+    - normalized_dfs: list of DataFrames, each normalized using the same scaler for common float columns.
     - scaler: the scaler object used for normalization.
+    - common_columns: list of float columns that were normalized.
     """
+    # Identify common columns across all DataFrames
+    common_columns = set.intersection(*(set(df.columns) for df in dfs))
+    
+    # Filter for float columns only
+    float_columns = set.intersection(*(set(df.select_dtypes(include=['float64']).columns) for df in dfs))
+    common_float_columns = list(common_columns.intersection(float_columns))
+    
     # Select scaler based on method
     if method == 'standard':
         scaler = StandardScaler()
@@ -21,18 +29,15 @@ def normalize_dfs(dfs, method='standard'):
     # Concatenate all DataFrames for scaler fitting
     all_data = pd.concat(dfs, ignore_index=True)
     
-    # Select only float columns for normalization
-    float_cols = all_data.select_dtypes(include=['float64']).columns
-    
-    # Fit the scaler on float columns
-    scaler.fit(all_data[float_cols])
+    # Fit the scaler on the common float columns
+    scaler.fit(all_data[common_float_columns])
     
     # Normalize each DataFrame using the fitted scaler
     normalized_dfs = []
     for df in dfs:
         df_normalized = df.copy()
-        if not float_cols.empty:
-            df_normalized[float_cols] = scaler.transform(df[float_cols])
+        if common_float_columns:
+            df_normalized[common_float_columns] = scaler.transform(df[common_float_columns])
         normalized_dfs.append(df_normalized)
     
-    return normalized_dfs, scaler
+    return normalized_dfs, scaler, common_float_columns
