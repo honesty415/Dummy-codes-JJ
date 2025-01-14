@@ -1,0 +1,38 @@
+def normalize_dfs(dfs, method='standard'):
+    """
+    Normalize float columns in dfs with a single scaler.
+    
+    Parameters:
+    - dfs: list of DataFrames, each with float columns to normalize.
+    - method: 'standard' for StandardScaler or 'minmax' for MinMaxScaler.
+    
+    Returns:
+    - normalized_dfs: list of DataFrames, each normalized using the same scaler.
+    - scaler: the scaler object used for normalization.
+    """
+    # Select scaler based on method
+    if method == 'standard':
+        scaler = StandardScaler()
+    elif method == 'minmax':
+        scaler = MinMaxScaler()
+    else:
+        raise ValueError("Method must be 'standard' or 'minmax'")
+    
+    # Concatenate all DataFrames for scaler fitting
+    all_data = pd.concat(dfs, ignore_index=True)
+    
+    # Select only float columns for normalization
+    float_cols = all_data.select_dtypes(include=['float64']).columns
+    
+    # Fit the scaler on float columns
+    scaler.fit(all_data[float_cols])
+    
+    # Normalize each DataFrame using the fitted scaler
+    normalized_dfs = []
+    for df in dfs:
+        df_normalized = df.copy()
+        if not float_cols.empty:
+            df_normalized[float_cols] = scaler.transform(df[float_cols])
+        normalized_dfs.append(df_normalized)
+    
+    return normalized_dfs, scaler
