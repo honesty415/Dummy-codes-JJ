@@ -1,0 +1,42 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+def plot_with_gaps(dfs, cols):
+    # 모든 DataFrame 병합 및 정렬
+    for df in dfs:
+        df['DATE_TIME'] = pd.to_datetime(df['DATE_TIME'])
+    combined_df = pd.concat(dfs, ignore_index=True).sort_values(by='DATE_TIME')
+    
+    # 데이터가 없는 기간 탐지
+    combined_df['gap'] = combined_df['DATE_TIME'].diff() > pd.Timedelta(minutes=1)  # 1분 이상 간격 탐지
+    combined_df['gap'] = combined_df['gap'].fillna(False)  # 첫 행 처리
+    
+    # 플롯 준비
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    for col in cols:
+        if col not in combined_df.columns:
+            print(f"Warning: {col} not found in DataFrame. Skipping.")
+            continue
+        
+        # 데이터의 연속성에 따라 플롯 분할
+        for group, group_df in combined_df.groupby((combined_df['gap'].cumsum())):
+            # 데이터가 비어 있는 구간은 표시하지 않음
+            if group_df.empty:
+                continue
+            ax.plot(group_df['DATE_TIME'], group_df[col], label=col if group == 0 else None)
+        
+    # 데이터가 없는 구간 표시 (비어 있는 곳에 ~ 추가)
+    for gap_start in combined_df[combined_df['gap']]['DATE_TIME']:
+        gap_end = combined_df.iloc[combined_df.index.get_loc(gap_start) + 1]['DATE_TIME']
+        ax.text((gap_start + (gap_end - gap_start) / 2), 0, '~', color='red', fontsize=14, ha='center', va='center')
+
+    # 플롯 꾸미기
+    ax.set_title("Time Series with Gaps")
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Values")
+    ax.legend()
+    ax.grid(True)
+    plt.tight_layout()
+    plt.show()
