@@ -1,0 +1,29 @@
+import numpy as np
+from itertools import combinations
+
+def combine_columns_with_info(array):
+    n, p = array.shape
+    combined_arrays = []
+    combination_info = []
+
+    for k in range(p + 1):  # k: number of columns to combine
+        for comb in combinations(range(p), k):
+            if comb:  # If some columns are combined
+                combined_column = array[:, comb].sum(axis=1)
+            else:  # If no columns are combined
+                combined_column = np.zeros(n)
+
+            combined_arrays.append(combined_column)
+            combination_info.append(tuple(comb))
+
+    # Stack combined columns to form the final array
+    result_array = np.column_stack(combined_arrays)
+    return result_array, combination_info
+
+# Example usage
+array = np.array([[1, 2], [3, 4], [5, 6]])
+result, info = combine_columns_with_info(array)
+print("Result Array:")
+print(result)
+print("\nCombination Info:")
+print(info)
