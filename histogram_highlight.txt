@@ -1,37 +1,46 @@
-def plot_sorted_histogram_with_multiple_highlights(variables, scores, highlight_indices=None):
+def plot_sorted_histogram_with_criteria(variables, scores, highlight_indices=None, criteria_score=None):
     """
-    변수와 점수를 받아 점수를 기준으로 오름차순 정렬한 후 특정 인덱스의 막대들을 색상으로 강조하여 히스토그램으로 표시.
+    변수와 점수를 받아 점수를 기준으로 오름차순 정렬한 후,
+    특정 인덱스의 막대를 색상으로 강조하고, 기준 점수 (criteria_score)에 빨간 점선을 추가하여 히스토그램으로 출력.
 
     Parameters:
     variables (list): 변수 이름 리스트
     scores (list): 각 변수에 대한 점수 리스트
     highlight_indices (list): 강조할 막대의 정렬 후 인덱스 리스트 (0부터 시작)
+    criteria_score (float): 기준 점수 (수평 빨간 점선 위치)
     """
     # 점수를 기준으로 정렬
     sorted_data = sorted(zip(variables, scores), key=lambda x: x[1])
     sorted_variables, sorted_scores = zip(*sorted_data)
     
-    # 막대 색상 설정
+    # 막대 및 레이블 색상 설정
     if highlight_indices is None:
         highlight_indices = []  # 강조할 인덱스가 없으면 빈 리스트
     colors = ['orange' if i in highlight_indices else 'lightgreen' for i in range(len(sorted_scores))]
     
     # 히스토그램 그리기
-    plt.bar(sorted_variables, sorted_scores, width=0.5, color=colors, edgecolor='black')
+    bars = plt.bar(sorted_variables, sorted_scores, width=0.5, color=colors, edgecolor='black')
     
+    # x축 레이블 설정 (색상 강조)
+    for i, bar in enumerate(bars):
+        bar_color = colors[i]
+        plt.text(bar.get_x() + bar.get_width() / 2, -5,  # 텍스트 위치 조정
+                 sorted_variables[i], ha='center', va='top', color=bar_color, fontsize=9, rotation=45)
+
+    # 기준 점수에 빨간 점선 추가
+    if criteria_score is not None:
+        plt.axhline(y=criteria_score, color='red', linestyle='--', linewidth=1)
+        plt.text(len(sorted_scores) - 0.5, criteria_score + 2, f'Criteria: {criteria_score}', 
+                 color='red', fontsize=10, ha='right')
+
     # 그래프 설정
     plt.xlabel('Variables')
     plt.ylabel('Scores')
     plt.title('Histogram of Scores (Sorted by Score)')
-    plt.ylim(0, max(scores) + 10)  # 점수 범위 약간 확장
+    plt.ylim(0, max(max(scores), criteria_score if criteria_score else 0) + 10)  # 점수 범위 약간 확장
+    plt.xticks(ticks=[], labels=[])  # 기본 x축 레이블 제거
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     
     # 그래프 출력
+    plt.tight_layout()  # 레이블 겹침 방지
     plt.show()
-
-# 테스트 데이터
-variables = ['Var1', 'Var2', 'Var3', 'Var4', 'Var5']
-scores = [50, 75, 85, 60, 90]
-
-# 함수 호출: 정렬 후 1번째와 3번째 막대를 강조
-plot_sorted_histogram_with_multiple_highlights(variables, scores, highlight_indices=[1, 3])
