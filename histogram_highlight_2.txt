@@ -1,0 +1,52 @@
+import matplotlib.pyplot as plt
+
+# 예제 데이터
+variables = ["A", "B", "C", "D", "E", "F", "G"]
+scores = [23, 45, 12, 56, 34, 67, 29]
+highlight_variables = ["B", "E", "G"]  # 강조할 변수
+criteria_score = 40  # 기준 점수
+
+# 히스토그램 그리기 함수 정의
+def plot_histogram_with_highlight(variables, scores, highlight_variables=None, criteria_score=None):
+    """
+    변수와 점수를 받아 정렬 없이 히스토그램을 그리고,
+    특정 변수만 색상으로 강조하며 기준 점수 (criteria_score)에 빨간 점선을 추가.
+
+    Parameters:
+    variables (list): 변수 이름 리스트
+    scores (list): 각 변수에 대한 점수 리스트
+    highlight_variables (list): 강조할 변수 리스트
+    criteria_score (float): 기준 점수 (수평 빨간 점선 위치)
+    """
+    # 막대 및 레이블 색상 설정
+    highlight_variables = highlight_variables or []
+    colors = ['orange' if var in highlight_variables else 'lightgreen' for var in variables]
+    
+    # 히스토그램 그리기
+    bars = plt.bar(variables, scores, width=0.5, color=colors, edgecolor='black')
+    
+    # x축 레이블 설정 (색상 강조)
+    for bar, var, color in zip(bars, variables, colors):
+        plt.text(bar.get_x() + bar.get_width() / 2, -5,  # 텍스트 위치 조정
+                 var, ha='center', va='top', color=color, fontsize=9, rotation=45)
+    
+    # 기준 점수에 빨간 점선 추가
+    if criteria_score is not None:
+        plt.axhline(y=criteria_score, color='red', linestyle='--', linewidth=1)
+        plt.text(len(variables) - 0.5, criteria_score + 2, f'Criteria: {criteria_score}', 
+                 color='red', fontsize=10, ha='right')
+    
+    # 그래프 설정
+    plt.xlabel('Variables')
+    plt.ylabel('Scores')
+    plt.title('Histogram of Scores')
+    plt.ylim(0, max(max(scores), criteria_score if criteria_score else 0) + 10)  # 점수 범위 확장
+    plt.xticks(ticks=[], labels=[])  # 기본 x축 레이블 제거
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    
+    # 그래프 출력
+    plt.tight_layout()  # 레이블 겹침 방지
+    plt.show()
+
+# 함수 실행
+plot_histogram_with_highlight(variables, scores, highlight_variables, criteria_score)
