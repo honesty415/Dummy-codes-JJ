@@ -1,0 +1,22 @@
+def plot_xy_graph(x, y, title='XY Graph', xlabel='X-axis', ylabel='Y-axis', get_minimum=False, get_maximum=False):
+    plt.figure(figsize=(10, 5))
+    plt.plot(x, y, marker='o', linestyle='-', label='Data')
+    
+    if get_minimum:
+        min_index = np.argmin(y)
+        plt.scatter(x[min_index], y[min_index], color='red', label='Min Value')
+        plt.axvline(x[min_index], color='red', linestyle='dashed', alpha=0.7)
+        plt.text(x[min_index], y[min_index] + 0.2, f'{x[min_index]:.2f}', color='red', ha='center', fontsize=12, fontweight='bold')
+    
+    if get_maximum:
+        max_index = np.argmax(y)
+        plt.scatter(x[max_index], y[max_index], color='blue', label='Max Value')
+        plt.axvline(x[max_index], color='blue', linestyle='dashed', alpha=0.7)
+        plt.text(x[max_index], y[max_index] + 0.2, f'{x[max_index]:.2f}', color='blue', ha='center', fontsize=12, fontweight='bold')
+    
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.grid(True)
+    plt.show()
