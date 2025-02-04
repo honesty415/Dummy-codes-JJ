@@ -1,4 +1,4 @@
-def plot_discontinuous_time_series_with_category_legend(
+def plot_discontinuous_time_series_with_unique_category_legend(
     dfs, cols, category_var, highlight_ranges=None, connect_within_df=True, point_size=1, alpha=0.3
 ):
     plt.figure(figsize=(12, 6))
@@ -28,10 +28,9 @@ def plot_discontinuous_time_series_with_category_legend(
                 subset = df[df[category_var] == category]
                 scatter = plt.scatter(
                     subset["DATE_TIME"], subset[col],
-                    label=category,  # 범례에 카테고리 값만 추가
                     color=color_map[category], s=point_size, alpha=alpha, edgecolors='k', linewidths=0.2
                 )
-                # 중복 제거를 위해 딕셔너리에 추가
+                # 중복 제거를 위해 한 번만 저장
                 if category not in legend_handles:
                     legend_handles[category] = scatter
 
@@ -39,9 +38,9 @@ def plot_discontinuous_time_series_with_category_legend(
     plt.ylabel("Value")
 
     # 중복 제거된 범례 추가
-    plt.legend(legend_handles.values(), legend_handles.keys(), title="Category Variable")
+    plt.legend(legend_handles.values(), legend_handles.keys(), title="Category Variable", loc="upper right")
 
-    plt.title(f"Discontinuous Time Series {'with' if connect_within_df else 'without'} Connection (Category Legend)")
+    plt.title(f"Discontinuous Time Series {'with' if connect_within_df else 'without'} Connection (Unique Category Legend)")
     plt.xticks(rotation=45)
     plt.grid(True)
     plt.show()
