@@ -1,0 +1,59 @@
+def create_global_color_map(dfs, category_var):
+    """ 모든 데이터프레임에서 등장하는 고유한 category_var 값을 수집하여 일관된 색상 매핑을 생성 """
+    all_categories = set()
+    for df in dfs:
+        all_categories.update(df[category_var].unique())
+
+    # 카테고리별 색상 맵 생성 (전체 데이터에서 공통적으로 적용)
+    return {category: plt.cm.get_cmap("tab10", len(all_categories))(i) for i, category in enumerate(sorted(all_categories))}
+
+
+
+def plot_discontinuous_time_series_with_optional_fixed_colors(
+    dfs, cols, category_var, color_map=None, highlight_ranges=None, connect_within_df=True, point_size=1, alpha=0.3, legend_loc="upper left", y_limits=None
+):
+    plt.figure(figsize=(12, 6))
+
+    # 만약 color_map이 None이면 전역적으로 category_var 값에 대한 색상 매핑을 생성
+    if color_map is None:
+        color_map = create_global_color_map(dfs, category_var)
+
+    # 배경 하이라이트 적용 (여러 개의 범위 가능)
+    if highlight_ranges:
+        colors = ['yellow', 'lightblue', 'lightgreen', 'lightcoral', 'lightgray']  # 여러 영역을 구분할 색상 리스트
+        for i, (y_min, y_max) in enumerate(highlight_ranges):
+            plt.axhspan(y_min, y_max, color=colors[i % len(colors)], alpha=0.2)  # 여러 색상이 순환되도록 설정
+
+    legend_handles = {category: None for category in sorted(color_map.keys())}  # 정렬된 카테고리 순서 유지
+
+    # 데이터프레임별로 개별적으로 플로팅 (연속된 데이터끼리만 선으로 연결할지 결정)
+    for df in dfs:
+        for col in cols:
+            if connect_within_df:
+                plt.plot(df["DATE_TIME"], df[col], color="gray", linestyle='-', alpha=0.3)  # 같은 데이터프레임 내 연속된 데이터는 연한 선으로 연결
+            for category in df[category_var].unique():
+                subset = df[df[category_var] == category]
+                scatter = plt.scatter(
+                    subset["DATE_TIME"], subset[col],
+                    color=color_map[category], s=point_size, alpha=alpha, edgecolors='k', linewidths=0.2
+                )
+                # 중복 제거 및 순서 유지
+                if legend_handles[category] is None:
+                    legend_handles[category] = scatter
+
+    plt.xlabel("Time")
+    plt.ylabel("Value")
+
+    # y-axis 범위 설정 (사용자가 입력한 값이 있을 경우 적용)
+    if y_limits:
+        plt.ylim(y_limits)
+
+    # 정렬된 범례 추가 (카테고리 순서 유지)
+    plt.legend([legend_handles[cat] for cat in sorted(legend_handles.keys()) if legend_handles[cat] is not None],
+               [cat for cat in sorted(legend_handles.keys()) if legend_handles[cat] is not None],
+               title="Category Variable", loc=legend_loc, bbox_to_anchor=(1, 1))
+
+    plt.title(f"Discontinuous Time Series {'with' if connect_within_df else 'without'} Connection (Optional Fixed Colors)")
+    plt.xticks(rotation=45)
+    plt.grid(True)
+    plt.show()
