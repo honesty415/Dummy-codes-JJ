@@ -1,4 +1,4 @@
-def plot_discontinuous_time_series_with_multiple_highlighted_regions(
+def plot_discontinuous_time_series_with_category_legend(
     dfs, cols, category_var, highlight_ranges=None, connect_within_df=True, point_size=1, alpha=0.3
 ):
     plt.figure(figsize=(12, 6))
@@ -17,6 +17,8 @@ def plot_discontinuous_time_series_with_multiple_highlighted_regions(
         for i, (y_min, y_max) in enumerate(highlight_ranges):
             plt.axhspan(y_min, y_max, color=colors[i % len(colors)], alpha=0.2)  # 여러 색상이 순환되도록 설정
 
+    legend_handles = {}  # 중복 제거를 위한 dictionary
+
     # 데이터프레임별로 개별적으로 플로팅 (연속된 데이터끼리만 선으로 연결할지 결정)
     for df in dfs:
         for col in cols:
@@ -24,28 +26,22 @@ def plot_discontinuous_time_series_with_multiple_highlighted_regions(
                 plt.plot(df["DATE_TIME"], df[col], color="gray", linestyle='-', alpha=0.3)  # 같은 데이터프레임 내 연속된 데이터는 연한 선으로 연결
             for category in df[category_var].unique():
                 subset = df[df[category_var] == category]
-                plt.scatter(
+                scatter = plt.scatter(
                     subset["DATE_TIME"], subset[col],
-                    label=f"{col} - {category}" if category not in color_map else "_nolegend_",
+                    label=category,  # 범례에 카테고리 값만 추가
                     color=color_map[category], s=point_size, alpha=alpha, edgecolors='k', linewidths=0.2
                 )
+                # 중복 제거를 위해 딕셔너리에 추가
+                if category not in legend_handles:
+                    legend_handles[category] = scatter
 
     plt.xlabel("Time")
     plt.ylabel("Value")
-    plt.legend()
-    plt.title(f"Discontinuous Time Series {'with' if connect_within_df else 'without'} Connection (Multiple Highlighted Regions)")
+
+    # 중복 제거된 범례 추가
+    plt.legend(legend_handles.values(), legend_handles.keys(), title="Category Variable")
+
+    plt.title(f"Discontinuous Time Series {'with' if connect_within_df else 'without'} Connection (Category Legend)")
     plt.xticks(rotation=45)
     plt.grid(True)
     plt.show()
-
-# 여러 개의 특정 y 구간 강조 ([200, 300], [400, 500], [600, 700])
-highlight_ranges_multiple = [(200, 300), (400, 500), (600, 700)]
-
-# 그래프 그리기 (여러 개의 배경 강조 적용)
-plot_discontinuous_time_series_with_multiple_highlighted_regions(
-    dfs_very_large, ["value1"], category_var="category_var", highlight_ranges=highlight_ranges_multiple, connect_within_df=True, point_size=1, alpha=0.3
-)
-
-plot_discontinuous_time_series_with_multiple_highlighted_regions(
-    dfs_very_large, ["value1"], category_var="category_var", highlight_ranges=highlight_ranges_multiple, connect_within_df=False, point_size=1, alpha=0.3
-)
