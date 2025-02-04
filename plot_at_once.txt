@@ -1,0 +1,51 @@
+def plot_discontinuous_time_series_with_multiple_highlighted_regions(
+    dfs, cols, category_var, highlight_ranges=None, connect_within_df=True, point_size=1, alpha=0.3
+):
+    plt.figure(figsize=(12, 6))
+
+    # 모든 데이터프레임에서 고유한 카테고리 값을 수집
+    all_categories = set()
+    for df in dfs:
+        all_categories.update(df[category_var].unique())
+
+    # 카테고리별 색상 맵 생성 (전체 데이터에서 공통적으로 적용)
+    color_map = {category: plt.cm.get_cmap("tab10", len(all_categories))(i) for i, category in enumerate(all_categories)}
+
+    # 배경 하이라이트 적용 (여러 개의 범위 가능)
+    if highlight_ranges:
+        colors = ['yellow', 'lightblue', 'lightgreen', 'lightcoral', 'lightgray']  # 여러 영역을 구분할 색상 리스트
+        for i, (y_min, y_max) in enumerate(highlight_ranges):
+            plt.axhspan(y_min, y_max, color=colors[i % len(colors)], alpha=0.2)  # 여러 색상이 순환되도록 설정
+
+    # 데이터프레임별로 개별적으로 플로팅 (연속된 데이터끼리만 선으로 연결할지 결정)
+    for df in dfs:
+        for col in cols:
+            if connect_within_df:
+                plt.plot(df["DATE_TIME"], df[col], color="gray", linestyle='-', alpha=0.3)  # 같은 데이터프레임 내 연속된 데이터는 연한 선으로 연결
+            for category in df[category_var].unique():
+                subset = df[df[category_var] == category]
+                plt.scatter(
+                    subset["DATE_TIME"], subset[col],
+                    label=f"{col} - {category}" if category not in color_map else "_nolegend_",
+                    color=color_map[category], s=point_size, alpha=alpha, edgecolors='k', linewidths=0.2
+                )
+
+    plt.xlabel("Time")
+    plt.ylabel("Value")
+    plt.legend()
+    plt.title(f"Discontinuous Time Series {'with' if connect_within_df else 'without'} Connection (Multiple Highlighted Regions)")
+    plt.xticks(rotation=45)
+    plt.grid(True)
+    plt.show()
+
+# 여러 개의 특정 y 구간 강조 ([200, 300], [400, 500], [600, 700])
+highlight_ranges_multiple = [(200, 300), (400, 500), (600, 700)]
+
+# 그래프 그리기 (여러 개의 배경 강조 적용)
+plot_discontinuous_time_series_with_multiple_highlighted_regions(
+    dfs_very_large, ["value1"], category_var="category_var", highlight_ranges=highlight_ranges_multiple, connect_within_df=True, point_size=1, alpha=0.3
+)
+
+plot_discontinuous_time_series_with_multiple_highlighted_regions(
+    dfs_very_large, ["value1"], category_var="category_var", highlight_ranges=highlight_ranges_multiple, connect_within_df=False, point_size=1, alpha=0.3
+)
