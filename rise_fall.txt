@@ -1,0 +1,54 @@
+import numpy as np
+
+def find_jump_points(data, threshold, rise=True):
+    """
+    데이터 리스트에서 값이 치솟거나 떨어지는 시점을 찾는 함수.
+    """
+    jump_points = []
+    for i in range(len(data) - 1):
+        if rise and data[i + 1] - data[i] > threshold:
+            jump_points.append(i)
+        elif not rise and data[i + 1] - data[i] < -threshold:
+            jump_points.append(i)
+    return jump_points
+
+def count_causal_rises(effect_list, cause_list, threshold, t, rise=True):
+    """
+    cause_list에서 값이 치솟거나 떨어지는 순간 이후 t 타임 내에
+    effect_list에서도 같은 방향으로 변화하는 경우를 찾는 함수.
+    """
+    cause_jump_points = find_jump_points(cause_list, threshold, rise)
+    effect_jump_points = find_jump_points(effect_list, threshold, rise)
+    
+    count = 0
+    matched_events = []  # 원인과 결과의 매칭된 인덱스 저장
+
+    for c_idx in cause_jump_points:
+        for e_idx in effect_jump_points:
+            if c_idx < e_idx <= c_idx + t:  # cause_jump 이후 t 타임 내에 effect_jump 발생
+                count += 1
+                matched_events.append((c_idx, e_idx))
+                break  # 하나의 원인에 대해 하나의 결과만 카운트
+
+    return count, cause_jump_points, effect_jump_points, matched_events
+
+# 예제 데이터
+effect_list = [0.1, 0.15, 0.2, 0.5, 0.3, 0.8, 0.7, 0.6]
+cause_list =  [0.1, 0.12, 0.15, 0.4, 0.2, 0.75, 0.6, 0.5]
+threshold = 0.2
+t = 3
+
+# 상승 기준으로 실행
+rise_count, rise_cause_jumps, rise_effect_jumps, rise_matched = count_causal_rises(effect_list, cause_list, threshold, t, rise=True)
+fall_count, fall_cause_jumps, fall_effect_jumps, fall_matched = count_causal_rises(effect_list, cause_list, threshold, t, rise=False)
+
+# 결과 출력
+print("Rise Count:", rise_count)
+print("Rise Cause Jump Points:", rise_cause_jumps)
+print("Rise Effect Jump Points:", rise_effect_jumps)
+print("Rise Matched Events (cause -> effect):", rise_matched)
+
+print("\nFall Count:", fall_count)
+print("Fall Cause Jump Points:", fall_cause_jumps)
+print("Fall Effect Jump Points:", fall_effect_jumps)
+print("Fall Matched Events (cause -> effect):", fall_matched)
