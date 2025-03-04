@@ -1,0 +1,60 @@
+def plot_multi_scale(df, date_col, cols, colors=None, linestyles=None, ylims=None):
+    """
+    DataFrame에서 서로 다른 스케일의 변수들을 한 그래프에 그리는 함수 (각 축의 y축 범위 설정 가능).
+
+    Parameters:
+    - df: pandas DataFrame
+    - date_col: x축에 사용할 datetime 컬럼명 (str)
+    - cols: y축에 표시할 컬럼들의 리스트 (list of str)
+    - colors: 각 컬럼의 색상 리스트 (list of str, optional)
+    - linestyles: 각 컬럼의 선 스타일 리스트 (list of str, optional)
+    - ylims: 각 y축의 (min, max) 범위를 설정하는 리스트 (list of tuples, optional)
+    """
+    import matplotlib.pyplot as plt
+
+    # 기본 색상 및 스타일 지정 (없을 경우 기본값 할당)
+    if colors is None:
+        colors = ['r', 'b', 'g', 'm', 'c', 'y']
+    if linestyles is None:
+        linestyles = ['-', '--', '-.', ':', '-', '--']
+
+    fig, ax1 = plt.subplots(figsize=(10, 5))
+    
+    # 첫 번째 축 생성
+    axes = [ax1]
+    axes[0].plot(df[date_col], df[cols[0]], color=colors[0], linestyle=linestyles[0], label=cols[0])
+    axes[0].set_ylabel(cols[0], color=colors[0])
+    axes[0].tick_params(axis='y', labelcolor=colors[0])
+
+    # y축 범위 설정 (첫 번째 변수)
+    if ylims and len(ylims) > 0:
+        axes[0].set_ylim(ylims[0])
+
+    # 추가 축 생성
+    for i in range(1, len(cols)):
+        ax_new = ax1.twinx()  # 새로운 y축 생성
+        ax_new.spines['right'].set_position(('outward', 60 * (i - 1)))  # y축 위치 조정
+        ax_new.plot(df[date_col], df[cols[i]], color=colors[i % len(colors)], linestyle=linestyles[i % len(linestyles)], label=cols[i])
+        ax_new.set_ylabel(cols[i], color=colors[i % len(colors)])
+        ax_new.tick_params(axis='y', labelcolor=colors[i % len(colors)])
+        
+        # y축 범위 설정
+        if ylims and len(ylims) > i:
+            ax_new.set_ylim(ylims[i])
+
+        axes.append(ax_new)
+
+    # 제목 & 레이아웃 정리
+    plt.title('Multi-Scale Line Plot with Custom Y-Limits')
+    fig.tight_layout()
+    
+    # 그래프 출력
+    plt.show()
+
+# 테스트 실행 (각 변수마다 y축 범위 설정)
+plot_multi_scale(
+    df, 
+    'date', 
+    ['temperature', 'sales', 'humidity'], 
+    ylims=[(10, 25), (900, 1800), (25, 45)]  # 각 변수의 y축 범위 설정
+)
