@@ -1,0 +1,127 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def find_stable_regions_v8(time_series, val_min, val_max, t1, t2, plot=False):
+    values = time_series.values
+    timestamps = time_series.index
+    
+    # 안정구간1 찾기
+    stable1_intervals = []
+    start = 0
+    while start < len(values):
+        if val_min <= values[start] <= val_max:
+            end = start
+            while end + 1 < len(values) and values[end + 1] == values[start]:
+                end += 1
+            if (timestamps[end] - timestamps[start]).seconds / 60 >= t1:
+                stable1_intervals.append((timestamps[start], timestamps[end]))
+            start = end + 1
+        else:
+            start += 1
+    
+    # 안정구간2 찾기 (monotone 증가/감소하면서, 동일한 값 유지 시간이 t2 이하인 경우)
+    stable2_intervals = []
+    for start, end in stable1_intervals:
+        prev_end = start  # 안정구간1이 시작되는 지점
+        
+        # 안정구간1 이전 구간을 역순으로 탐색하여 monotone 증가 또는 감소하는 구간 찾기
+        mono_start = None
+        increasing = None
+        last_value = None
+        same_value_start = None  # 동일 값 유지 시작점
+        same_value_duration = 0
+
+        for i in range(timestamps.get_loc(start) - 1, -1, -1):  # 안정구간1 이전만 탐색
+            t = timestamps[i]
+            v = values[i]
+
+            if last_value is None:
+                last_value = v
+                mono_start = t
+                same_value_start = t
+                same_value_duration = 1
+                continue
+
+            if v == last_value:  # 동일한 값 유지 구간
+                same_value_duration += 1
+            else:
+                if increasing is None:
+                    increasing = v > last_value  # 증가/감소 방향 결정
+                elif (increasing and v < last_value) or (not increasing and v > last_value):
+                    break  # monotone 성질이 깨지면 종료
+
+                # 동일 값 유지 구간이 t2를 초과하는지 확인
+                if same_value_duration > t2:
+                    break  # 안정구간2로 인정 불가
+
+                # 새로운 값이 나오면 동일 값 유지 구간 리셋
+                same_value_start = t
+                same_value_duration = 1
+
+            last_value = v
+            mono_start = t
+
+        # 유효한 monotone 증가/감소 구간이 존재하면 안정구간2에 추가
+        if mono_start is not None and prev_end - mono_start >= pd.Timedelta(minutes=1):
+            stable2_intervals.append((mono_start, prev_end))
+    
+    # 불안정구간 찾기
+    all_stable = stable1_intervals + stable2_intervals
+    all_stable.sort()
+    
+    unstable_intervals = []
+    prev_end = timestamps[0]
+    for start, end in all_stable:
+        if prev_end < start:
+            unstable_intervals.append((prev_end, start))
+        prev_end = end
+    if prev_end < timestamps[-1]:
+        unstable_intervals.append((prev_end, timestamps[-1]))
+    
+    # 데이터별 라벨링 (Stable1: 0, Stable2: 1, Unstable: 2)
+    labels = pd.Series(2, index=time_series.index)  # 기본값은 Unstable (2)
+    for start, end in stable1_intervals:
+        labels.loc[start:end] = 0
+    for start, end in stable2_intervals:
+        labels.loc[start:end] = 1
+    
+    # Plot 결과 시각화 (첫 데이터 시작 시간을 기준으로 첫 그래프 범위 결정)
+    if plot:
+        first_start_time = timestamps[0]  # 첫 데이터의 시작 시간
+        first_end_time = first_start_time + pd.Timedelta(hours=23, minutes=59)
+        
+        current_start_time = first_start_time
+        while current_start_time <= timestamps[-1]:
+            current_end_time = current_start_time + pd.Timedelta(hours=23, minutes=59)
+            day_data = time_series[(time_series.index >= current_start_time) & (time_series.index <= current_end_time)]
+            
+            if not day_data.empty:
+                plt.figure(figsize=(12, 6))
+                plt.plot(day_data.index, day_data.values, label="Time Series", alpha=0.5, color='black')
+                
+                # 안정구간1 시각화
+                for start, end in stable1_intervals:
+                    if start >= current_start_time and end <= current_end_time:
+                        plt.axvspan(start, end, color='green', alpha=0.3, label="Stable1" if 'Stable1' not in plt.gca().get_legend_handles_labels()[1] else "")
+                
+                # 안정구간2 시각화
+                for start, end in stable2_intervals:
+                    if start >= current_start_time and end <= current_end_time:
+                        plt.axvspan(start, end, color='blue', alpha=0.3, label="Stable2" if 'Stable2' not in plt.gca().get_legend_handles_labels()[1] else "")
+                
+                # 불안정구간 시각화
+                for start, end in unstable_intervals:
+                    if start >= current_start_time and end <= current_end_time:
+                        plt.axvspan(start, end, color='red', alpha=0.3, label="Unstable" if 'Unstable' not in plt.gca().get_legend_handles_labels()[1] else "")
+                
+                plt.xlabel("Time")
+                plt.ylabel("Value")
+                plt.title(f"Stable and Unstable Regions: {current_start_time.date()} - {current_end_time.date()}")
+                plt.legend()
+                plt.show()
+            
+            # 다음날 07:00 기준으로 이동
+            current_start_time += pd.Timedelta(days=1)
+    
+    return stable1_intervals, stable2_intervals, unstable_intervals, labels
