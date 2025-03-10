@@ -1,8 +1,10 @@
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def find_stable_regions_v8(time_series, val_min, val_max, t1, t2, plot=False):
+def find_stable_regions_v9(df, col, val_min, val_max, t1, t2, plot=False):
+    time_series = df.set_index('DATE_TIME')[col]
     values = time_series.values
     timestamps = time_series.index
     
