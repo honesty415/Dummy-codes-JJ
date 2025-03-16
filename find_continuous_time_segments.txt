@@ -1,0 +1,25 @@
+def find_continuous_time_segments(datetime_list):
+    """
+    주어진 분 단위 datetime 리스트에서 연속된 구간을 그룹화하여 반환하는 함수.
+
+    Parameters:
+        datetime_list (list): 오름차순으로 정렬된 datetime 리스트 (pd.Timestamp 객체)
+
+    Returns:
+        list of lists: 연속된 datetime 값들의 그룹 리스트
+    """
+    if not datetime_list:
+        return []
+    
+    all_ranges = []
+    temp_range = [datetime_list[0]]
+
+    for i in range(1, len(datetime_list)):
+        if (datetime_list[i] - datetime_list[i - 1]).seconds == 60:  # 1분 차이면 연속됨
+            temp_range.append(datetime_list[i])
+        else:
+            all_ranges.append(temp_range)  # 현재까지 저장된 연속된 구간 추가
+            temp_range = [datetime_list[i]]  # 새로운 구간 시작
+
+    all_ranges.append(temp_range)  # 마지막 구간 추가
+    return all_ranges
