@@ -1,0 +1,41 @@
+def plot_scores_bar(result, variables_to_plot, score_keys, y_line=None, highlight_vars=None):
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    x = np.arange(len(variables_to_plot))
+    width = 0.8 / len(score_keys)
+
+    plt.figure(figsize=(12, 6))
+
+    for i, score in enumerate(score_keys):
+        values = [result[var][score] for var in variables_to_plot]
+        edges = ['black' if highlight_vars and var in highlight_vars else None for var in variables_to_plot]
+        widths = [1.5 if edge else 0 for edge in edges]
+
+        for j, (val, edgecolor, lw) in enumerate(zip(values, edges, widths)):
+            plt.bar(
+                x[j] + (i - len(score_keys)/2) * width + width/2,
+                val,
+                width,
+                color=f'C{i}',
+                edgecolor=edgecolor,
+                linewidth=lw,
+                label=score if j == 0 else ""
+            )
+
+    plt.xticks(x, variables_to_plot)
+    plt.ylim(0, 1.1)
+    plt.ylabel('Score Value')
+    plt.title('Scores per Variable')
+
+    if y_line is not None:
+        plt.axhline(y=y_line, color='red', linestyle='--', linewidth=1)
+        plt.text(x[-1] + 0.3, y_line, f'y = {y_line:.2f}', va='center', ha='left', color='red')
+
+    plt.legend()
+    plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    plt.show()
+
+# 실행: highlight 'var3', y_line=0.5
+plot_scores_bar(result, variables, score_keys, y_line=0.5, highlight_vars=['var3'])
