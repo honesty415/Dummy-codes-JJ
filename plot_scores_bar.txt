@@ -1,0 +1,26 @@
+def plot_scores_bar(result, variables_to_plot, score_keys, y_line=None):
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    x = np.arange(len(variables_to_plot))
+    width = 0.8 / len(score_keys)  # 막대 너비
+
+    plt.figure(figsize=(12, 6))
+
+    for i, score in enumerate(score_keys):
+        values = [result[var][score] for var in variables_to_plot]
+        plt.bar(x + (i - len(score_keys)/2) * width + width/2, values, width, label=score)
+
+    plt.xticks(x, variables_to_plot)
+    plt.ylim(0, 1.1)
+    plt.ylabel('Score Value')
+    plt.title('Scores per Variable')
+
+    if y_line is not None:
+        plt.axhline(y=y_line, color='red', linestyle='--', linewidth=1)
+        plt.text(x[-1] + 0.3, y_line, f'y = {y_line:.2f}', va='center', ha='left', color='red')
+
+    plt.legend()
+    plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    plt.show()
