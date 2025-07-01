@@ -1,0 +1,65 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from hmmlearn.hmm import GaussianHMM
+from scipy.stats import mode
+
+# -----------------------------
+# 데이터 생성
+# -----------------------------
+np.random.seed(123)
+n_each = 50
+states_shift = np.array([1]*n_each + [2]*n_each + [1]*n_each + [3]*n_each + [2]*n_each)
+obs_shift = np.concatenate([
+    np.random.normal(1.0, 0.1, n_each),   # State 1
+    np.random.normal(1.0, 0.4, n_each),   # State 2
+    np.random.normal(1.0, 0.1, n_each),   # State 1
+    np.random.normal(2.0, 0.1, n_each),   # State 3 (mean shift)
+    np.random.normal(1.0, 0.4, n_each),   # State 2
+])
+X_shift = obs_shift.reshape(-1, 1)
+
+# -----------------------------
+# HMMlearn 모델 학습
+# -----------------------------
+hmm_model = GaussianHMM(n_components=3, covariance_type="full", n_iter=100, random_state=42)
+hmm_model.fit(X_shift)
+states_hmm_learn = hmm_model.predict(X_shift)
+
+# 라벨 매핑
+map_hmm_learn = {i: mode(states_shift[states_hmm_learn == i])[0][0] for i in range(3)}
+states_hmm_learn_mapped = np.vectorize(map_hmm_learn.get)(states_hmm_learn)
+
+# -----------------------------
+# KMeans
+# -----------------------------
+kmeans = KMeans(n_clusters=3, random_state=42).fit(X_shift)
+states_km = kmeans.labels_
+map_km = {i: mode(states_shift[states_km == i])[0][0] for i in range(3)}
+states_km_mapped = np.vectorize(map_km.get)(states_km)
+
+# -----------------------------
+# 시각화 함수
+# -----------------------------
+color_map = {1: 'tab:orange', 2: 'tab:green', 3: 'tab:blue'}
+
+def plot_states(title, labels, obs, ylim=(0.5, 2.5)):
+    plt.figure(figsize=(12, 2.5))
+    for s in [1, 2, 3]:
+        plt.plot(np.where(labels == s)[0], obs[labels == s], '.', label=f"State {s}", color=color_map[s])
+    plt.title(title, y=1.15)
+    plt.xlabel("Time Index")
+    plt.ylabel("Sensor Reading")
+    plt.ylim(ylim)
+    plt.xticks([])
+    plt.yticks([])
+    plt.legend(loc="upper right")
+    plt.tight_layout()
+    plt.show()
+
+# -----------------------------
+# 결과 출력
+# -----------------------------
+plot_states("True States (with Mean Shift)", states_shift, obs_shift)
+plot_states("HMMlearn Inferred States", states_hmm_learn_mapped, obs_shift)
+plot_states("K-Means Clusters", states_km_mapped, obs_shift)
