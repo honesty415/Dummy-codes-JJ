@@ -1,0 +1,70 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_time_series_segments(A_segments, B_segments, events_dict,
+                              title="Time Series Segments with Events",
+                              y_label="Value",
+                              resample_rule=None,
+                              agg_func='mean'):
+    fig, ax = plt.subplots(figsize=(10, 5))
+    
+    def prepare(segment):
+        seg = segment.copy()
+        seg = seg.rename(columns={'value': y_label})
+        seg.set_index('DATE_TIME', inplace=True)
+        if resample_rule:
+            seg = seg.resample(resample_rule).agg(agg_func)
+        seg.reset_index(inplace=True)
+        return seg
+    
+    # Prepare segments
+    A_prepped = [prepare(s) for s in A_segments]
+    B_prepped = [prepare(s) for s in B_segments]
+    
+    # Plot A segments
+    for i, seg in enumerate(A_prepped):
+        ax.plot(seg['DATE_TIME'], seg[y_label], marker='o', linestyle='-',
+                label='A Segment' if i == 0 else "")
+        end_time = seg['DATE_TIME'].iloc[-1]
+        ax.axvline(end_time, linestyle='--', linewidth=1)
+    
+    # Plot B segments
+    for i, seg in enumerate(B_prepped):
+        ax.plot(seg['DATE_TIME'], seg[y_label], marker='s', linestyle='-',
+                label='B Segment' if i == 0 else "")
+    
+    # Shade events
+    for event_name, (start, end) in events_dict.items():
+        ax.axvspan(start, end, alpha=0.3)
+        mid = start + (end - start) / 2
+        ax.text(mid, ax.get_ylim()[1]*0.9, event_name, ha='center', va='top')
+    
+    ax.set_xlabel('DATE_TIME')
+    ax.set_ylabel(y_label)
+    ax.set_title(title)
+    fig.autofmt_xdate()
+    ax.legend()
+    plt.show()
+
+# Example: minute-level data over two days
+rng1 = pd.date_range('2025-07-01', '2025-07-03', freq='T')  # minute freq
+rng2 = pd.date_range('2025-07-02', '2025-07-04', freq='T')
+seg1 = pd.DataFrame({'DATE_TIME': rng1, 'value': np.sin(np.linspace(0, 10, len(rng1)))})
+seg2 = pd.DataFrame({'DATE_TIME': rng2, 'value': np.cos(np.linspace(0, 10, len(rng2)))})
+
+events = {
+    'Event1': (pd.Timestamp('2025-07-01 08:00'), pd.Timestamp('2025-07-01 12:00')),
+    'Event2': (pd.Timestamp('2025-07-03 06:00'), pd.Timestamp('2025-07-03 18:00'))
+}
+
+# Plot with daily smoothing (daily mean)
+plot_time_series_segments(
+    [seg1],
+    [seg2],
+    events,
+    title="Daily-Aggregated Time Series",
+    y_label="Smoothed Value",
+    resample_rule='D',
+    agg_func='mean'
+)
