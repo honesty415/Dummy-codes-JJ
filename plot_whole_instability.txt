@@ -1,0 +1,63 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_time_series_segments(A_segments, B_segments, events_dict, title="Time Series Segments with Events", y_label="Value"):
+    fig, ax = plt.subplots(figsize=(10, 5))
+    
+    # Plot A segments with markers and lines
+    for segment in A_segments:
+        ax.plot(
+            segment['DATE_TIME'], segment['value'],
+            marker='o', linestyle='-',
+            label='A Segment' if segment is A_segments[0] else ""
+        )
+        # Vertical line at end of each A segment
+        end_time = segment['DATE_TIME'].iloc[-1]
+        ax.axvline(end_time, linestyle='--', linewidth=1)
+    
+    # Plot B segments with markers and lines
+    for segment in B_segments:
+        ax.plot(
+            segment['DATE_TIME'], segment['value'],
+            marker='s', linestyle='-',
+            label='B Segment' if segment is B_segments[0] else ""
+        )
+    
+    # Shade event regions and annotate
+    for event_name, (start, end) in events_dict.items():
+        ax.axvspan(start, end, alpha=0.3)
+        mid = start + (end - start) / 2
+        ax.text(mid, ax.get_ylim()[1] * 0.9, event_name, ha='center', va='top')
+    
+    ax.set_xlabel('Date_TIME')
+    ax.set_ylabel(y_label)
+    ax.set_title(title)
+    fig.autofmt_xdate()
+    ax.legend()
+    plt.show()
+
+# Example data
+dates1 = pd.date_range('2025-07-01', periods=12, freq='H')
+segment1 = pd.DataFrame({'DATE_TIME': dates1, 'value': np.sin(np.linspace(0, 2, 12))})
+dates2 = pd.date_range('2025-07-02', periods=12, freq='H')
+segment2 = pd.DataFrame({'DATE_TIME': dates2, 'value': np.cos(np.linspace(0, 2, 12))})
+dates3 = pd.date_range('2025-07-01 06:00', periods=12, freq='H')
+segment3 = pd.DataFrame({'DATE_TIME': dates3, 'value': np.sin(np.linspace(1, 3, 12)) + 1})
+dates4 = pd.date_range('2025-07-02 06:00', periods=12, freq='H')
+segment4 = pd.DataFrame({'DATE_TIME': dates4, 'value': np.cos(np.linspace(1, 3, 12)) - 1})
+
+# Event dictionary
+events = {
+    'Event1': (pd.Timestamp('2025-07-01 03:00'), pd.Timestamp('2025-07-01 08:00')),
+    'Event2': (pd.Timestamp('2025-07-02 15:00'), pd.Timestamp('2025-07-02 20:00'))
+}
+
+# Call the function with custom title and y-axis label
+plot_time_series_segments(
+    [segment1, segment2],
+    [segment3, segment4],
+    events,
+    title="Custom Plot with Custom Y-Label",
+    y_label="Custom Value Label"
+)
